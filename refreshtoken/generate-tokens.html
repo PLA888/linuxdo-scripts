@@ -1,0 +1,149 @@
+<!-- 自己糊的 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .token-display {
+            background-color: #fff;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            overflow-wrap: break-word;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .token-display::after {
+            content: "点击复制";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #f0f0f0;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        .token-display:hover::after {
+            opacity: 1;
+        }
+        h1, h3 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>输入refresh token:</h1>
+    <input type="text" id="refreshToken" placeholder="输入refresh token">
+    <button onclick="generateTokens()">一键获取</button>
+    <div>
+        <h3>Access Token:</h3>
+        <div id="accessToken" class="token-display" onclick="copyToClipboard('accessToken')">Access token will appear here</div>
+    </div>
+    <div>
+        <h3>Share Token:</h3>
+        <div id="shareToken" class="token-display" onclick="copyToClipboard('shareToken')">Share token will appear here</div>
+    </div>
+
+    <script>
+        function generateRandomHex(length) {
+            let result = '';
+            const characters = '0123456789abcdef';
+            const charactersLength = characters.length;
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            return result;
+        }
+
+        function getAccessToken(refreshToken) {
+            return fetch('https://token.oaifree.com/api/auth/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `refresh_token=${refreshToken}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access_token) {
+                    return data.access_token;
+                } else {
+                    throw new Error('Failed to generate access token');
+                }
+            });
+        }
+
+        function getShareToken(accessToken) {
+            return fetch('https://chat.oaifree.com/token/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: `unique_name=${generateRandomHex(8)}&access_token=${accessToken}&expires_in=0&site_limit=&gpt35_limit=-1&gpt4_limit=-1&show_conversations=true`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token_key) {
+                    return data.token_key;
+                } else {
+                    throw new Error('Failed to generate share token');
+                }
+            });
+        }
+
+        async function generateTokens() {
+            const refreshToken = document.getElementById('refreshToken').value;
+            try {
+                const accessToken = await getAccessToken(refreshToken);
+                document.getElementById('accessToken').textContent = accessToken;
+                
+                const shareToken = await getShareToken(accessToken);
+                document.getElementById('shareToken').textContent = shareToken;
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
