@@ -1,3 +1,4 @@
+// 源自：https://linux.do/t/topic/232443 cf 部署获取 acess token 
 const TOKEN_URL_NEO = 'https://token.oaifree.com/api/auth/refresh';
 const TOKEN_URL_OAI = 'https://auth0.openai.com/oauth/token';
 
